@@ -1,0 +1,87 @@
+version: "3.8"
+services:
+
+  strapi-service:
+    container_name: strapiContainer
+    build:
+      context: ./${STRAPI_DIRECTORY}
+      dockerfile: Dockerfile
+
+    image: image_mystrapi:latest # image: <USER-DEFINED-IMAGE-NAME>:<USER-DEFINED-VERSION> You need to build image of Strapi at localhost first.
+    restart: unless-stopped
+    
+    env_file: .env
+    environment:
+      DATABASE_CLIENT: ${DB_PLATFORM}
+      DATABASE_HOST: mysqlContainer
+      DATABASE_PORT: ${MYSQL_PORT}
+      DATABASE_NAME: ${MYSQL_DATABASE}
+      DATABASE_USERNAME: ${MYSQL_USER}
+      DATABASE_PASSWORD: ${MYSQL_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      APP_KEYS: ${APP_KEYS}
+      NODE_ENV: ${NODE_ENV}
+
+    volumes:
+      - ./${STRAPI_DIRECTORY}/package.json:/opt/package.json
+      - ./${STRAPI_DIRECTORY}/package-lock.json:/opt/package-lock.json
+      #- ./${STRAPI_DIRECTORY}/yarn.lock:/opt/yarn.lock # Replace with package-lock.json if using npm
+      - ./${STRAPI_DIRECTORY}/src:/opt/app/src
+      - ./${STRAPI_DIRECTORY}/config:/opt/app/config
+      - ./${STRAPI_DIRECTORY}/.env:/opt/app/.env
+      - ./${STRAPI_DIRECTORY}/public/uploads:/opt/app/public/uploads
+
+    ports:
+      - "1337:1337"
+
+    networks:
+      - strapi-network
+
+    depends_on:
+      # - mysql-service
+      mysql-service:
+        condition: service_healthy
+
+
+  mysql-service:
+    container_name: mysqlContainer
+    image: mysql:latest
+    # platform: linux/amd64 #for platform error on Apple M1 chips
+
+    env_file:
+      - .env
+
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+    # Apply to MySQL 5 only, remove this line if you using MySQL 8 above.
+    # command: --default-authentication-plugin=mysql_native_password
+
+    ports:
+      - "3306:${MYSQL_PORT}"
+
+    networks:
+      - strapi-network
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "${MYSQL_HOST}", "-u", "${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysql-data:
+
+networks:
+  strapi-network:
+    name: The-Strapi-Network
+    driver: bridge

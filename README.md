@@ -15,3 +15,13 @@ Create Image by command $ *podman build --memory=8g -t image_mystrapi:latest -f 
 Run Container by command $ *podman run -d --name strapi_container -p 1337:1337 localhost/image_mystrapi:latest*
 
 Try *http://localhost:1337* at browser to verify if *container successfully running* and *image successfully created*.
+
+
+**Dockercompose-with-database** @Branch Name
+Now we create *docker-compose.yml* & .env files at root path of directory to create & run multiple services (apps), the multiple containers are running in an Pod of Podman, *docker-compose.yml* file is manipulating multiple *Dockerfile* files. 
+
+This Tutorial we illustrate default DB platform of SQLite change to MySQL by *docker-compose.yml* and then running the multiple containers.
+
+Remark: To process this you need to build Image of Strapi first, See tutorial at branch **Add-Dockerignore-Dockerfile**
+
+Build & Uplink the Containers in an Pod by command $ *podman-compose up --build*
